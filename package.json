@@ -1,6 +1,6 @@
 {
   "name": "gladys-adguard-home",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "AdGuard Home external integration for Gladys Assistant: DNS protection switches, blocking statistics, dashboard widgets and scene actions.",
   "type": "module",
