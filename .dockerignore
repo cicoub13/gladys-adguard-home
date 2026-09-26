@@ -1,0 +1,13 @@
+node_modules/
+data/
+test/
+.github/
+.git/
+*.log
+.DS_Store
+.env
+.prettierrc.json
+.prettierignore
+eslint.config.js
+README.md
+cover.jpg

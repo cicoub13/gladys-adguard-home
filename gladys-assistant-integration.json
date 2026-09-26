@@ -1,0 +1,498 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "AdGuard Home",
+  "description": {
+    "en": "Control AdGuard Home DNS protection and follow its blocking statistics in Gladys.",
+    "fr": "Pilotez la protection DNS d'AdGuard Home et suivez ses statistiques de blocage."
+  },
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/cicoub13/gladys-adguard-home:0.1.0",
+  "gladys_version": ">=5.1.0",
+  "cover_image": "https://raw.githubusercontent.com/cicoub13/gladys-adguard-home/main/cover.png",
+  "categories": ["network", "security"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Connect to AdGuard Home",
+        "fr": "Connexion à AdGuard Home"
+      },
+      "description": {
+        "en": "Enter the address of the AdGuard Home web interface (the one you open in your browser) and the account you log in with.",
+        "fr": "Saisissez l'adresse de l'interface web d'AdGuard Home (celle que vous ouvrez dans votre navigateur) et le compte avec lequel vous vous y connectez."
+      },
+      "links": [
+        {
+          "url": "https://github.com/AdguardTeam/AdGuardHome/wiki/Getting-Started",
+          "label": {
+            "en": "AdGuard Home documentation",
+            "fr": "Documentation d'AdGuard Home"
+          }
+        }
+      ]
+    },
+    {
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "AdGuard Home address",
+        "fr": "Adresse d'AdGuard Home"
+      },
+      "placeholder": {
+        "en": "http://192.168.1.10:3000",
+        "fr": "http://192.168.1.10:3000"
+      },
+      "required": true
+    },
+    {
+      "key": "username",
+      "type": "string",
+      "label": {
+        "en": "Username",
+        "fr": "Identifiant"
+      },
+      "required": false
+    },
+    {
+      "key": "password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe"
+      },
+      "required": false
+    },
+    {
+      "key": "poll_frequency",
+      "type": "select",
+      "label": {
+        "en": "Refresh frequency",
+        "fr": "Fréquence de rafraîchissement"
+      },
+      "required": false,
+      "default": "60",
+      "options": [
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes"
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion"
+      },
+      "timeout_seconds": 20
+    }
+  ],
+  "widgets": [
+    {
+      "key": "overview",
+      "label": {
+        "en": "Overview",
+        "fr": "Vue d'ensemble"
+      },
+      "description": {
+        "en": "DNS queries and blocks over 24 hours, protection status and a pause button.",
+        "fr": "Requêtes DNS et blocages sur 24 heures, état de la protection et bouton de pause."
+      },
+      "icon": "shield",
+      "action_timeout_seconds": 20
+    },
+    {
+      "key": "ranking",
+      "label": {
+        "en": "Top lists",
+        "fr": "Classements"
+      },
+      "description": {
+        "en": "Most blocked domains, most queried domains or most active clients.",
+        "fr": "Domaines les plus bloqués, domaines les plus demandés ou clients les plus actifs."
+      },
+      "icon": "list",
+      "settings": [
+        {
+          "key": "list",
+          "type": "select",
+          "label": {
+            "en": "List",
+            "fr": "Liste"
+          },
+          "required": true,
+          "default": "blocked_domains",
+          "options": [
+            {
+              "value": "blocked_domains",
+              "label": {
+                "en": "Most blocked domains",
+                "fr": "Domaines les plus bloqués"
+              }
+            },
+            {
+              "value": "queried_domains",
+              "label": {
+                "en": "Most queried domains",
+                "fr": "Domaines les plus demandés"
+              }
+            },
+            {
+              "value": "clients",
+              "label": {
+                "en": "Most active clients",
+                "fr": "Clients les plus actifs"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "pause_protection",
+      "label": {
+        "en": "Pause DNS protection",
+        "fr": "Mettre la protection en pause"
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "duration",
+          "type": "select",
+          "label": {
+            "en": "Duration",
+            "fr": "Durée"
+          },
+          "required": true,
+          "default": "600000",
+          "options": [
+            {
+              "value": "30000",
+              "label": {
+                "en": "30 seconds",
+                "fr": "30 secondes"
+              }
+            },
+            {
+              "value": "60000",
+              "label": {
+                "en": "1 minute",
+                "fr": "1 minute"
+              }
+            },
+            {
+              "value": "600000",
+              "label": {
+                "en": "10 minutes",
+                "fr": "10 minutes"
+              }
+            },
+            {
+              "value": "3600000",
+              "label": {
+                "en": "1 hour",
+                "fr": "1 heure"
+              }
+            },
+            {
+              "value": "28800000",
+              "label": {
+                "en": "8 hours",
+                "fr": "8 heures"
+              }
+            },
+            {
+              "value": "86400000",
+              "label": {
+                "en": "24 hours",
+                "fr": "24 heures"
+              }
+            }
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "key": "resume_time",
+          "type": "string",
+          "label": {
+            "en": "Resume time (HH:MM)",
+            "fr": "Heure de reprise (HH:MM)"
+          }
+        },
+        {
+          "key": "resume_at",
+          "type": "string",
+          "label": {
+            "en": "Protection resumes at (ISO date)",
+            "fr": "Reprise de la protection (date ISO)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "blocked_services",
+      "label": {
+        "en": "Block or unblock services",
+        "fr": "Bloquer ou débloquer des services"
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Operation",
+            "fr": "Opération"
+          },
+          "required": true,
+          "default": "block",
+          "options": [
+            {
+              "value": "block",
+              "label": {
+                "en": "Block",
+                "fr": "Bloquer"
+              }
+            },
+            {
+              "value": "unblock",
+              "label": {
+                "en": "Unblock",
+                "fr": "Débloquer"
+              }
+            }
+          ]
+        },
+        {
+          "key": "services",
+          "type": "multi_select",
+          "label": {
+            "en": "Services",
+            "fr": "Services"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "youtube",
+              "label": {
+                "en": "YouTube",
+                "fr": "YouTube"
+              }
+            },
+            {
+              "value": "tiktok",
+              "label": {
+                "en": "TikTok",
+                "fr": "TikTok"
+              }
+            },
+            {
+              "value": "instagram",
+              "label": {
+                "en": "Instagram",
+                "fr": "Instagram"
+              }
+            },
+            {
+              "value": "facebook",
+              "label": {
+                "en": "Facebook",
+                "fr": "Facebook"
+              }
+            },
+            {
+              "value": "snapchat",
+              "label": {
+                "en": "Snapchat",
+                "fr": "Snapchat"
+              }
+            },
+            {
+              "value": "twitter",
+              "label": {
+                "en": "X (Twitter)",
+                "fr": "X (Twitter)"
+              }
+            },
+            {
+              "value": "reddit",
+              "label": {
+                "en": "Reddit",
+                "fr": "Reddit"
+              }
+            },
+            {
+              "value": "pinterest",
+              "label": {
+                "en": "Pinterest",
+                "fr": "Pinterest"
+              }
+            },
+            {
+              "value": "whatsapp",
+              "label": {
+                "en": "WhatsApp",
+                "fr": "WhatsApp"
+              }
+            },
+            {
+              "value": "discord",
+              "label": {
+                "en": "Discord",
+                "fr": "Discord"
+              }
+            },
+            {
+              "value": "telegram",
+              "label": {
+                "en": "Telegram",
+                "fr": "Telegram"
+              }
+            },
+            {
+              "value": "netflix",
+              "label": {
+                "en": "Netflix",
+                "fr": "Netflix"
+              }
+            },
+            {
+              "value": "disneyplus",
+              "label": {
+                "en": "Disney+",
+                "fr": "Disney+"
+              }
+            },
+            {
+              "value": "amazon_streaming",
+              "label": {
+                "en": "Prime Video",
+                "fr": "Prime Video"
+              }
+            },
+            {
+              "value": "twitch",
+              "label": {
+                "en": "Twitch",
+                "fr": "Twitch"
+              }
+            },
+            {
+              "value": "spotify",
+              "label": {
+                "en": "Spotify",
+                "fr": "Spotify"
+              }
+            },
+            {
+              "value": "roblox",
+              "label": {
+                "en": "Roblox",
+                "fr": "Roblox"
+              }
+            },
+            {
+              "value": "minecraft",
+              "label": {
+                "en": "Minecraft",
+                "fr": "Minecraft"
+              }
+            },
+            {
+              "value": "epic_games",
+              "label": {
+                "en": "Epic Games (Fortnite)",
+                "fr": "Epic Games (Fortnite)"
+              }
+            },
+            {
+              "value": "steam",
+              "label": {
+                "en": "Steam",
+                "fr": "Steam"
+              }
+            },
+            {
+              "value": "playstation",
+              "label": {
+                "en": "PlayStation",
+                "fr": "PlayStation"
+              }
+            },
+            {
+              "value": "xboxlive",
+              "label": {
+                "en": "Xbox Live",
+                "fr": "Xbox Live"
+              }
+            },
+            {
+              "value": "nintendo",
+              "label": {
+                "en": "Nintendo",
+                "fr": "Nintendo"
+              }
+            },
+            {
+              "value": "leagueoflegends",
+              "label": {
+                "en": "League of Legends",
+                "fr": "League of Legends"
+              }
+            },
+            {
+              "value": "chatgpt",
+              "label": {
+                "en": "ChatGPT",
+                "fr": "ChatGPT"
+              }
+            }
+          ]
+        },
+        {
+          "key": "client",
+          "type": "string",
+          "label": {
+            "en": "Client (name, IP or ClientID, empty for the whole network)",
+            "fr": "Client (nom, IP ou ClientID, vide pour tout le réseau)"
+          },
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "key": "blocked_services",
+          "type": "string",
+          "label": {
+            "en": "Services now blocked",
+            "fr": "Services désormais bloqués"
+          }
+        }
+      ]
+    }
+  ]
+}
