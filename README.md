@@ -30,6 +30,12 @@ the JavaScript SDK
   polling is suspended after a refused password so the Gladys host does not get
   locked out by AdGuard Home's login rate limit.
 
+## Screenshots
+
+| Overview widget                                                               | Top lists widget (most blocked domains)                                       |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| <img src="docs/images/widget-overview.png" alt="Overview widget" width="400"> | <img src="docs/images/widget-ranking.png" alt="Top lists widget" width="400"> |
+
 ## Install
 
 - **From Gladys**: install **AdGuard Home** from the integration store (Gladys
