@@ -11,6 +11,7 @@
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/cicoub13/gladys-adguard-home/main/cover.png",
   "categories": ["network", "security"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
