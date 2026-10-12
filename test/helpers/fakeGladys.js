@@ -13,6 +13,7 @@ export function createFakeGladys() {
     widgetRefreshes: [],
   };
   const failures = {};
+  const published = new Map();
 
   function maybeFail(method) {
     if (failures[method] > 0) {
@@ -48,6 +49,27 @@ export function createFakeGladys() {
     async publishStates(states) {
       maybeFail('publishStates');
       calls.states.push(...states);
+    },
+
+    // Same contract as the SDK: skips unchanged values, remembers a value
+    // only once publishStates accepted it.
+    async publishChangedStates(states) {
+      const changed = states.filter(
+        ({ device_feature_external_id: id, state }) => published.get(id) !== state,
+      );
+      if (changed.length > 0) {
+        await this.publishStates(changed);
+        changed.forEach(({ device_feature_external_id: id, state }) => published.set(id, state));
+      }
+      return { success: true, count: changed.length };
+    },
+
+    forgetPublishedStates(externalId) {
+      [...published.keys()].forEach((id) => {
+        if (externalId === undefined || id === externalId || id.startsWith(`${externalId}:`)) {
+          published.delete(id);
+        }
+      });
     },
 
     async publishDiscoveredDevices(devices) {

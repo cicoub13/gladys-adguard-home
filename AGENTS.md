@@ -6,19 +6,21 @@ Project-specific notes. Generic rules (SDK contract, commands, kit-owned files, 
 ## Data flow
 
 - `index.js` -> `AdGuardIntegration` (`src/integration.js`) holds everything: `client`, `poller`,
-  last `snapshot`, `lastError` ({en, fr}), `published` Map (feature id -> last state).
+  last `snapshot`, `lastError` ({en, fr}). Published values are remembered by the SDK
+  (`gladys.publishChangedStates`), not here.
 - `applyConfig()` resets all state, bumps `generation`, builds a new client, starts a `Poller`.
   A poll whose `generation` is stale when it resolves publishes nothing (config changed meanwhile).
 - `poll()`: `fetchSnapshot()` -> `reportConnection(true)` -> `publishDiscoveredDevices` once per
-  config (device shows up in Discovery without a scan) -> `publishChangedStates()` (diff against
-  `published`, host API caps states at 300/min). `poll()` never throws.
+  config (device shows up in Discovery without a scan) -> `gladys.publishChangedStates()` (SDK
+  dedup, host API caps states at 300/min). `poll()` never throws.
 - Gladys-side errors (429, WS down) inside a successful poll are only logged, never treated as an
   AdGuard outage. `reportConnection` only calls `setConnectionStatus` when state OR reason changes.
 - Every write (switch, widget button, scene action) goes through `integration.write()`: wraps
   `AdGuardError` into a bilingual `Error` ("en / fr"), then `poller.refreshNow()` and
   `requestWidgetRefresh('overview')`.
-- `onDeviceCreated`/`onDeviceUpdated` clear `published` and republish (states sent before creation
-  are dropped by the host); `onDeviceDeleted` just clears `published`.
+- `applyConfig()` calls `gladys.forgetPublishedStates()`. On device created/updated/deleted the SDK
+  forgets the device's values itself; `onDeviceCreated`/`onDeviceUpdated` then republish (states
+  sent before creation are dropped by the host). No `onDeviceDeleted` handler is needed.
 - Widgets/scene actions are pure functions over the snapshot (`src/widgets.js`,
   `src/scene-actions.js`); they get the client, never Gladys.
 

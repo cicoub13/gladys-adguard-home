@@ -239,6 +239,23 @@ test('switching a feature writes to AdGuard, refreshes and nudges the overview w
   assert.deepEqual(gladys.calls.widgetRefreshes, ['overview']);
 });
 
+test('a switch command still shows its value when the refresh after it fails', async () => {
+  const { gladys, integration, writes } = setup({ outcomes: [snapshot(), unreachable()] });
+  await integration.applyConfig(CONFIG);
+  const feature = gladys.calls.discovered[0][0].features.find((f) =>
+    f.external_id.endsWith(':safebrowsing'),
+  );
+  gladys.calls.states.length = 0;
+
+  await integration.handleSetValue({}, feature, 1);
+
+  assert.deepEqual(writes, [['setSafeBrowsing', true]]);
+  assert.notEqual(integration.lastError, null);
+  assert.deepEqual(gladys.calls.states, [
+    { device_feature_external_id: feature.external_id, state: 1 },
+  ]);
+});
+
 test('a switch command on an unknown feature is refused', async () => {
   const { integration } = setup();
   await integration.applyConfig(CONFIG);
@@ -263,6 +280,8 @@ test('creating the device in Gladys republishes every state', async () => {
   await integration.applyConfig(CONFIG);
   gladys.calls.states.length = 0;
 
+  // The SDK forgets the device's published values before running the handler.
+  gladys.forgetPublishedStates(gladys.calls.discovered[0][0].external_id);
   await integration.handleDeviceCreated();
 
   assert.equal(gladys.calls.states.length, 8);

@@ -81,9 +81,6 @@ export class AdGuardIntegration {
     // Reachability last reported to Gladys: null (never), true or false.
     this.reportedConnected = null;
     this.reportedReason = null;
-    // featureExternalId -> last value published, so a poll only publishes
-    // what changed (the host API caps states at 300 per minute).
-    this.published = new Map();
     this.devicePublished = false;
     // Bumped on every config change: a poll started under an older config
     // must not publish anything once it resolves.
@@ -106,7 +103,7 @@ export class AdGuardIntegration {
     this.lastError = null;
     this.reportedConnected = null;
     this.reportedReason = null;
-    this.published.clear();
+    this.gladys.forgetPublishedStates();
     this.devicePublished = false;
 
     if (!isConfigured(this.config)) {
@@ -167,7 +164,8 @@ export class AdGuardIntegration {
         await this.gladys.publishDiscoveredDevices([buildDevice(this.gladys, this.config)]);
         this.devicePublished = true;
       }
-      await this.publishChangedStates(snapshot);
+      // Only what changed: the host API caps states at 300 per minute.
+      await this.gladys.publishChangedStates(buildStates(this.gladys, snapshot));
     } catch (err) {
       this.logger.error('Could not publish to Gladys', err);
     }
@@ -211,19 +209,6 @@ export class AdGuardIntegration {
     await this.gladys.setConnectionStatus(connected, message);
     this.reportedConnected = connected;
     this.reportedReason = reason;
-  }
-
-  async publishChangedStates(snapshot) {
-    const changed = buildStates(this.gladys, snapshot).filter(
-      ({ device_feature_external_id: id, state }) => this.published.get(id) !== state,
-    );
-    if (changed.length === 0) {
-      return;
-    }
-    await this.gladys.publishStates(changed);
-    for (const { device_feature_external_id: id, state } of changed) {
-      this.published.set(id, state);
-    }
   }
 
   requireClient() {
@@ -284,26 +269,23 @@ export class AdGuardIntegration {
     await this.write((client) => applySetValue(client, key, value));
     // The refresh above published the value AdGuard now reports; this covers
     // a refresh that failed (AdGuard down right after the command).
-    if (this.lastError !== null && this.published.get(feature.external_id) !== value) {
-      await this.gladys.publishState(feature.external_id, value);
-      this.published.set(feature.external_id, value);
+    if (this.lastError !== null) {
+      await this.gladys.publishChangedStates([
+        { device_feature_external_id: feature.external_id, state: value },
+      ]);
     }
   }
 
   /**
    * onDeviceCreated / onDeviceUpdated: states published before the user created
-   * the device are dropped by the host API, so publish them all again.
+   * the device are dropped by the host API, so publish them all again (the SDK
+   * forgets the device's published values before running this handler, and on
+   * a deletion too).
    */
   async handleDeviceCreated() {
-    this.published.clear();
     if (this.snapshot) {
-      await this.publishChangedStates(this.snapshot);
+      await this.gladys.publishChangedStates(buildStates(this.gladys, this.snapshot));
     }
-  }
-
-  /** onDeviceDeleted: a device created again later must get its states again. */
-  handleDeviceDeleted() {
-    this.published.clear();
   }
 
   /** Manifest action `test_connection`: throws (shown in red) on failure. */
