@@ -82,7 +82,10 @@ Project-specific notes. Generic rules (SDK contract, commands, kit-owned files, 
 
 ## Tests
 
-- `test/helpers/fakeGladys.js`: records calls, `failNext(method, n)` simulates host 429s.
+- `test/integration.test.js` runs against `createFakeGladys({ selector: 'test' })` from
+  `@gladysassistant/integration-sdk/testing` (a real SDK client on an in-memory Gladys): read
+  `gladys.fake.*` (wire bodies), simulate a host 429 with
+  `t.mock.method(gladys, 'publishStates')`.
 - `test/fixtures/adguard.js`: factories of real API answers; `stats()` has 168 hourly buckets
   with a recognizable last-24 h ramp (24 h sums differ from the 7-day totals).
 - `test/client.test.js` uses a route-table `fakeFetch`; `test/integration.test.js` injects

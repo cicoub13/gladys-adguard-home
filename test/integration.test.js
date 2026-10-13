@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { AdGuardIntegration } from '../src/integration.js';
 import { AdGuardError } from '../src/adguard/client.js';
-import { createFakeGladys } from './helpers/fakeGladys.js';
+import { GladysApiError } from '@gladysassistant/integration-sdk';
+import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 
 const CONFIG = { url: 'http://192.168.1.10:3000', username: 'admin', password: 'hunter2' };
 
@@ -33,7 +34,7 @@ function snapshot(overrides = {}) {
 // poll takes the next outcome (a snapshot, or an Error to throw); the last
 // outcome repeats.
 function setup({ outcomes = [snapshot()] } = {}) {
-  const gladys = createFakeGladys();
+  const gladys = createFakeGladys({ selector: 'test' });
   const writes = [];
   const client = {
     setProtection: async (...args) => writes.push(['setProtection', ...args]),
@@ -72,6 +73,15 @@ function setup({ outcomes = [snapshot()] } = {}) {
   return { gladys, integration, writes, createdClients, logs, timers, polls: () => polls };
 }
 
+// fake.states keeps the whole history: the states published from now on.
+function statesFromNow(gladys) {
+  const start = gladys.fake.states.length;
+  return () => gladys.fake.states.slice(start);
+}
+
+// fake.discoveredDevices only keeps the last list: count the publications.
+const discoveredPublications = (gladys) => gladys.fake.bodies('POST', '/discovered_device').length;
+
 const unreachable = () =>
   new AdGuardError('unreachable', 'GET /control/status: AdGuard Home is unreachable', {
     code: 'ECONNREFUSED',
@@ -84,9 +94,9 @@ test('without an address, Gladys is told what to fill in and nothing polls', asy
 
   assert.equal(polls(), 0);
   assert.equal(timers.size, 0);
-  assert.equal(gladys.calls.connectionStatuses.length, 1);
-  assert.equal(gladys.calls.connectionStatuses[0].connected, false);
-  assert.match(gladys.calls.connectionStatuses[0].message.fr, /adresse/);
+  assert.equal(gladys.fake.connectionStatuses.length, 1);
+  assert.equal(gladys.fake.connectionStatuses[0].connected, false);
+  assert.match(gladys.fake.connectionStatuses[0].message.fr, /adresse/);
   await assert.rejects(integration.handleScan(), /address/);
   // The widgets still render something instead of failing the dashboard.
   assert.ok(integration.widgetOverview().components.length > 0);
@@ -98,7 +108,7 @@ test('an unusable address gets its own message, not "enter the address"', async 
   await integration.applyConfig({ url: 'http://admin:secret@192.168.1.10' });
 
   assert.equal(polls(), 0);
-  assert.match(gladys.calls.connectionStatuses[0].message.fr, /n'est pas valide/);
+  assert.match(gladys.fake.connectionStatuses[0].message.fr, /n'est pas valide/);
 });
 
 test('the first poll reports the connection, publishes the device and every state', async () => {
@@ -107,10 +117,10 @@ test('the first poll reports the connection, publishes the device and every stat
   await integration.applyConfig({ ...CONFIG, poll_frequency: '30' });
 
   assert.equal(createdClients[0].url, CONFIG.url);
-  assert.deepEqual(gladys.calls.connectionStatuses, [{ connected: true, message: undefined }]);
-  assert.equal(gladys.calls.discovered.length, 1);
-  assert.equal(gladys.calls.discovered[0].length, 1);
-  assert.equal(gladys.calls.states.length, 8);
+  assert.deepEqual(gladys.fake.connectionStatuses, [{ connected: true }]);
+  assert.equal(discoveredPublications(gladys), 1);
+  assert.equal(gladys.fake.discoveredDevices.length, 1);
+  assert.equal(gladys.fake.states.length, 8);
   assert.equal(timers.size, 1, 'next poll scheduled');
 });
 
@@ -119,15 +129,15 @@ test('a poll only publishes the states that changed', async () => {
     outcomes: [snapshot(), snapshot(), snapshot({ protection_enabled: false })],
   });
   await integration.applyConfig(CONFIG);
-  gladys.calls.states.length = 0;
+  const published = statesFromNow(gladys);
 
   await integration.poll();
-  assert.equal(gladys.calls.states.length, 0);
+  assert.equal(published().length, 0);
 
   await integration.poll();
-  assert.equal(gladys.calls.states.length, 1);
-  assert.equal(gladys.calls.states[0].state, 0);
-  assert.equal(gladys.calls.discovered.length, 1, 'the device is published once per config');
+  assert.equal(published().length, 1);
+  assert.equal(published()[0].state, 0);
+  assert.equal(discoveredPublications(gladys), 1, 'the device is published once per config');
 });
 
 test('an outage is reported once, logged loudly once, and recovery is reported', async () => {
@@ -139,7 +149,8 @@ test('an outage is reported once, logged loudly once, and recovery is reported',
   await integration.poll();
   await integration.poll();
 
-  const statuses = gladys.calls.connectionStatuses;
+  // fake.connectionStatuses is rebuilt on every read.
+  let statuses = gladys.fake.connectionStatuses;
   assert.equal(statuses.length, 2);
   assert.equal(statuses[1].connected, false);
   assert.match(statuses[1].message.fr, /injoignable/);
@@ -147,6 +158,7 @@ test('an outage is reported once, logged loudly once, and recovery is reported',
   assert.deepEqual(integration.lastError, statuses[1].message);
 
   await integration.poll();
+  statuses = gladys.fake.connectionStatuses;
   assert.equal(statuses.length, 3);
   assert.equal(statuses[2].connected, true);
   assert.equal(integration.lastError, null);
@@ -162,13 +174,13 @@ test('a refused password suspends polling so AdGuard does not lock Gladys out', 
 
   assert.equal(polls(), 1);
   assert.equal(timers.size, 0, 'no retry scheduled');
-  assert.match(gladys.calls.connectionStatuses[0].message.fr, /suspendues/);
+  assert.match(gladys.fake.connectionStatuses[0].message.fr, /suspendues/);
 
   // "Test the connection" after fixing the password resumes the loop.
   await integration.testConnection();
   await new Promise((resolve) => setImmediate(resolve));
   assert.equal(timers.size, 1);
-  assert.equal(gladys.calls.connectionStatuses.at(-1).connected, true);
+  assert.equal(gladys.fake.connectionStatus.connected, true);
 });
 
 test('AdGuard unreachable at boot: the loop keeps running and nothing is thrown', async () => {
@@ -176,25 +188,29 @@ test('AdGuard unreachable at boot: the loop keeps running and nothing is thrown'
 
   await integration.applyConfig(CONFIG);
 
-  assert.equal(gladys.calls.connectionStatuses[0].connected, false);
-  assert.equal(gladys.calls.discovered.length, 0);
+  assert.equal(gladys.fake.connectionStatuses[0].connected, false);
+  assert.equal(discoveredPublications(gladys), 0);
   assert.equal(timers.size, 1);
   // The widgets explain the situation rather than throwing.
   assert.ok(integration.widgetOverview().components.length > 0);
 });
 
-test('a Gladys-side failure is not mistaken for an AdGuard outage', async () => {
+test('a Gladys-side failure is not mistaken for an AdGuard outage', async (t) => {
   const { gladys, integration, logs } = setup();
-  gladys.failNext('publishStates');
+  // publishChangedStates goes through publishStates: one host API 429.
+  t.mock.method(gladys, 'publishStates').mock.mockImplementationOnce(async () => {
+    throw new GladysApiError(429, 'TOO_MANY_REQUESTS', 'RATE_LIMIT_EXCEEDED');
+  });
 
   await integration.applyConfig(CONFIG);
 
   assert.equal(integration.lastError, null);
-  assert.equal(gladys.calls.connectionStatuses.at(-1).connected, true);
+  assert.equal(gladys.fake.connectionStatus.connected, true);
   assert.equal(logs.error.length, 1);
+  assert.equal(gladys.fake.states.length, 0);
   // Nothing was recorded as published, so the next poll publishes it all.
   await integration.poll();
-  assert.equal(gladys.calls.states.length, 8);
+  assert.equal(gladys.fake.states.length, 8);
 });
 
 test('a poll that resolves after a config change publishes nothing', async () => {
@@ -205,7 +221,7 @@ test('a poll that resolves after a config change publishes nothing', async () =>
     });
   const { gladys, integration } = setup({ outcomes: [snapshot(), slow, snapshot()] });
   await integration.applyConfig(CONFIG);
-  gladys.calls.states.length = 0;
+  const published = statesFromNow(gladys);
 
   const stale = integration.poll();
   await integration.applyConfig({ ...CONFIG, url: 'http://192.168.1.11' });
@@ -213,7 +229,7 @@ test('a poll that resolves after a config change publishes nothing', async () =>
   await stale;
 
   assert.ok(
-    gladys.calls.states.every(
+    published().every(
       (state) => state.state !== 0 || !state.device_feature_external_id.endsWith(':protection'),
     ),
     'the stale "protection off" read was dropped',
@@ -224,36 +240,37 @@ test('switching a feature writes to AdGuard, refreshes and nudges the overview w
   const { gladys, integration, writes } = setup({
     outcomes: [snapshot(), snapshot({ safebrowsing_enabled: true })],
   });
+  // Widget refresh nudges go over the WebSocket: only sent once connected.
+  await gladys.connect();
   await integration.applyConfig(CONFIG);
-  const feature = gladys.calls.discovered[0][0].features.find((f) =>
+  const feature = gladys.fake.discoveredDevices[0].features.find((f) =>
     f.external_id.endsWith(':safebrowsing'),
   );
 
   await integration.handleSetValue({}, feature, 1);
 
   assert.deepEqual(writes, [['setSafeBrowsing', true]]);
-  assert.deepEqual(gladys.calls.states.at(-1), {
+  assert.deepEqual(gladys.fake.states.at(-1), {
     device_feature_external_id: feature.external_id,
     state: 1,
   });
-  assert.deepEqual(gladys.calls.widgetRefreshes, ['overview']);
+  assert.deepEqual(gladys.fake.widgetRefreshes, ['overview']);
+  await gladys.disconnect();
 });
 
 test('a switch command still shows its value when the refresh after it fails', async () => {
   const { gladys, integration, writes } = setup({ outcomes: [snapshot(), unreachable()] });
   await integration.applyConfig(CONFIG);
-  const feature = gladys.calls.discovered[0][0].features.find((f) =>
+  const feature = gladys.fake.discoveredDevices[0].features.find((f) =>
     f.external_id.endsWith(':safebrowsing'),
   );
-  gladys.calls.states.length = 0;
+  const published = statesFromNow(gladys);
 
   await integration.handleSetValue({}, feature, 1);
 
   assert.deepEqual(writes, [['setSafeBrowsing', true]]);
   assert.notEqual(integration.lastError, null);
-  assert.deepEqual(gladys.calls.states, [
-    { device_feature_external_id: feature.external_id, state: 1 },
-  ]);
+  assert.deepEqual(published(), [{ device_feature_external_id: feature.external_id, state: 1 }]);
 });
 
 test('a switch command on an unknown feature is refused', async () => {
@@ -277,14 +294,14 @@ test('an AdGuard failure during a write becomes a readable bilingual error', asy
 
 test('creating the device in Gladys republishes every state', async () => {
   const { gladys, integration } = setup();
+  gladys.onDeviceCreated(() => integration.handleDeviceCreated());
   await integration.applyConfig(CONFIG);
-  gladys.calls.states.length = 0;
+  const published = statesFromNow(gladys);
 
   // The SDK forgets the device's published values before running the handler.
-  gladys.forgetPublishedStates(gladys.calls.discovered[0][0].external_id);
-  await integration.handleDeviceCreated();
+  await gladys.fake.deviceCreated(gladys.fake.discoveredDevices[0]);
 
-  assert.equal(gladys.calls.states.length, 8);
+  assert.equal(published().length, 8);
 });
 
 test('test_connection returns the version, or throws a readable error', async () => {
