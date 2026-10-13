@@ -32,7 +32,6 @@ gladys.onScanRequest(() => integration.handleScan());
 gladys.onSetValue((device, feature, value) => integration.handleSetValue(device, feature, value));
 gladys.onDeviceCreated(() => integration.handleDeviceCreated());
 gladys.onDeviceUpdated(() => integration.handleDeviceCreated());
-gladys.onDeviceDeleted(() => integration.handleDeviceDeleted());
 
 // --- Configuration screen ----------------------------------------------------
 gladys.onAction('test_connection', () => integration.testConnection());
