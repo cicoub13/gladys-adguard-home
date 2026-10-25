@@ -1,16 +1,17 @@
 # AdGuard Home
 
-> **Requires Gladys 5.1 or later.** The dashboard widgets and scene actions of
-> this integration ship with Gladys 5.1; on an earlier version the integration
-> cannot be installed.
+## Overview
 
 Control the DNS protection of your [AdGuard Home](https://adguard.com/adguard-home/overview.html)
 server from Gladys and follow its blocking statistics: switches for the
 protection and its filters, 24-hour counters, two dashboard widgets and two
 scene actions (timed pause, blocking of services such as YouTube or TikTok).
 
-## Requirements
+## Prerequisites
 
+- Gladys 5.1 or later. The dashboard widgets and scene actions of this
+  integration ship with Gladys 5.1; on an earlier version the integration
+  cannot be installed.
 - An AdGuard Home server reachable over the network from the machine running
   Gladys.
 - The account you use to log in to the AdGuard Home web interface. If your
@@ -135,6 +136,14 @@ of the services blocked after the change, comma-separated (for example
 If an action fails (AdGuard Home unreachable, unknown client…), the error is
 written in the scene logs and the rest of the scene carries on.
 
+## Privacy
+
+- The **Top lists** widget shows the domains visited on your network and the
+  names and IP addresses of your devices to anyone who can see the dashboard.
+  Only add it to dashboards whose viewers may see that.
+- The password is stored by Gladys as a secret and is only sent to your
+  AdGuard Home server. The integration talks to nothing else.
+
 ## Troubleshooting
 
 Error messages appear in the integration's connection status, under the
@@ -177,8 +186,8 @@ date."** AdGuard Home refused the request: update it to a recent version. A
 404 can also mean that the address leads to another web server.
 
 **"Unexpected error while talking to AdGuard Home. Check the integration
-logs."** Look at the integration logs in Gladys, and report the problem if it
-persists.
+logs."** Look at the integration logs in Gladys (**Logs** tab of the
+integration page), and report the problem if it persists.
 
 **"No data from AdGuard Home yet. If this lasts, check the address and the
 account in the integration settings."** Shown by the widgets until the first
@@ -199,11 +208,3 @@ Home refuses the username or password, instead of retrying at every refresh.
 Polling resumes when you save the configuration or click **Test the
 connection**. If you already tried several times, wait 15 minutes before
 testing again.
-
-## Privacy
-
-- The **Top lists** widget shows the domains visited on your network and the
-  names and IP addresses of your devices to anyone who can see the dashboard.
-  Only add it to dashboards whose viewers may see that.
-- The password is stored by Gladys as a secret and is only sent to your
-  AdGuard Home server. The integration talks to nothing else.
