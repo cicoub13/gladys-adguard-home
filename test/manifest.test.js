@@ -31,6 +31,10 @@ const CATALOG_CATEGORIES = [
   'notifications',
   'assistants',
   'services',
+  'transport',
+  'vehicles',
+  'servers',
+  'leisure',
 ];
 
 const readJson = (name) => JSON.parse(readFileSync(new URL(`../${name}`, import.meta.url), 'utf8'));

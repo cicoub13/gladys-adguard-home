@@ -1,8 +1,6 @@
 # AdGuard Home
 
-> **Nécessite Gladys 5.1 ou supérieur.** Les widgets de dashboard et les
-> actions de scène de cette intégration sont livrés avec Gladys 5.1 ; sur une
-> version antérieure, elle ne peut pas être installée.
+## Présentation
 
 Pilotez la protection DNS de votre serveur
 [AdGuard Home](https://adguard.com/fr/adguard-home/overview.html) depuis Gladys
@@ -12,6 +10,9 @@ scène (pause temporaire, blocage de services comme YouTube ou TikTok).
 
 ## Prérequis
 
+- Gladys 5.1 ou supérieur. Les widgets de dashboard et les actions de scène
+  de cette intégration sont livrés avec Gladys 5.1 ; sur une version
+  antérieure, elle ne peut pas être installée.
 - Un serveur AdGuard Home joignable par le réseau depuis la machine qui fait
   tourner Gladys.
 - Le compte avec lequel vous vous connectez à l'interface web d'AdGuard Home.
@@ -145,6 +146,15 @@ Si une action échoue (AdGuard Home injoignable, client inconnu…), l'erreur es
 inscrite dans les logs de la scène et le reste de la scène continue de
 s'exécuter.
 
+## Confidentialité
+
+- Le widget **Classements** montre les domaines consultés sur votre réseau
+  ainsi que les noms et adresses IP de vos appareils à toute personne qui voit
+  le dashboard. Ne l'ajoutez qu'aux dashboards dont les utilisateurs peuvent
+  voir ces informations.
+- Le mot de passe est stocké par Gladys comme un secret et n'est envoyé qu'à
+  votre serveur AdGuard Home. L'intégration ne communique avec rien d'autre.
+
 ## Dépannage
 
 Les messages d'erreur s'affichent dans l'état de connexion de l'intégration,
@@ -192,7 +202,8 @@ serveur web.
 
 **« Erreur inattendue en communiquant avec AdGuard Home. Consultez les
 journaux de l'intégration. »** Consultez les journaux de l'intégration dans
-Gladys, et signalez le problème s'il persiste.
+Gladys (onglet **Logs** de la page de l'intégration), et signalez le problème
+s'il persiste.
 
 **« Pas encore de données d'AdGuard Home. Si cela dure, vérifiez l'adresse et
 le compte dans les paramètres de l'intégration. »** Affiché par les widgets
@@ -215,12 +226,3 @@ dès qu'AdGuard Home refuse l'identifiant ou le mot de passe, au lieu de
 réessayer à chaque rafraîchissement. Elles reprennent lorsque vous enregistrez
 la configuration ou cliquez sur **Tester la connexion**. Si vous avez déjà fait
 plusieurs essais, attendez 15 minutes avant de tester à nouveau.
-
-## Confidentialité
-
-- Le widget **Classements** montre les domaines consultés sur votre réseau
-  ainsi que les noms et adresses IP de vos appareils à toute personne qui voit
-  le dashboard. Ne l'ajoutez qu'aux dashboards dont les utilisateurs peuvent
-  voir ces informations.
-- Le mot de passe est stocké par Gladys comme un secret et n'est envoyé qu'à
-  votre serveur AdGuard Home. L'intégration ne communique avec rien d'autre.
