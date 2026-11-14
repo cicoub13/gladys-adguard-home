@@ -8,7 +8,7 @@
 #   - multi-arch image (linux/amd64 + linux/arm64), see the CI workflow
 # -----------------------------------------------------------------------------
 
-FROM node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+FROM node:24-alpine@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85
 
 # dumb-init: handles signals (SIGTERM) correctly for a graceful shutdown.
 RUN apk add --no-cache dumb-init
